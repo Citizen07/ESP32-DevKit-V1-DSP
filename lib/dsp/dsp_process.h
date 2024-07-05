@@ -1,28 +1,32 @@
-//#define DISPLAY_ON
-//#define DAC_24_BIT
+#pragma once
+#define DAC_24_BIT
 #define WIFI_ON
 
 #include <string.h>
 #include <math.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <driver/i2s.h>
-#include <driver/i2c.h>
-#include <TelnetSpy.h>
-#include "es8388_registers.h"
+#include "driver/i2s_std.h"
 
-#ifdef DISPLAY_ON
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#ifdef ESP8266
+  #include <ESP8266WiFi.h>
+  #include <ESP8266mDNS.h>
+  #include <WiFiUdp.h>
+#else // ESP32
+  #include <WiFi.h>
+  #include <ESPmDNS.h>
 #endif
+#include <ArduinoOTA.h>
+#include "TelnetSpy.h"
 
 
 //------------------------------------------------------------------------------------
 // Constant definitions
 //------------------------------------------------------------------------------------
 
-#define SDA_PIN                 GPIO_NUM_18       // SDA pin number for I2C bus
-#define SCL_PIN                 GPIO_NUM_23       // SCL pin number for I2C bus
+#define I2S_STD_MCLK_IO1        GPIO_NUM_0        // I2S master clock io number 0
+#define I2S_STD_BCLK_IO1        GPIO_NUM_2        // I2S bit clock io number 2
+#define I2S_STD_WS_IO1          GPIO_NUM_15       // I2S word select io number 15
+#define I2S_STD_DOUT_IO1        GPIO_NUM_4        // I2S data out io number 4
+#define I2S_STD_DIN_IO1         GPIO_NUM_16       // I2S data in io number 16
 
 #define CORE_MAIN               1                 // Core running main loop 
 #define CORE_DSP                0                 // Core running DSP loop
@@ -35,7 +39,7 @@
 #define DSP_ALL_CHANNELS        -1                // Specify all channels processed
 #define DSP_NUM_CHANNELS        2                 // Number of channels
 #define DSP_MAX_FILTERS         20                // Max number of biquad filters
-#define DSP_SAMPLE_RATE         44100             // The sample rate
+#define DSP_SAMPLE_RATE         48000             // The sample rate
 #define DSP_MAX_GAIN            24                // Maximum gain for the channel
 #define DSP_MAX_SAMPLES         96                // Maximum number of samples per channel each loop
 #define DSP_MIN_DELAY_MILLIS    ((DSP_MAX_SAMPLES*1000)/DSP_SAMPLE_RATE+1)
@@ -74,7 +78,7 @@ typedef int16_t    sample_t;
 // Type definitions
 //------------------------------------------------------------------------------------
 
-typedef struct filter_def_t {
+typedef struct {
   int           channel;                          // Filter channel
   int           filter_type;                      // Type of filter to apply
   float         frequency;                        // Centre frequency of filter
@@ -85,7 +89,7 @@ typedef struct filter_def_t {
 #endif
 } filter_def_t;
 
-typedef struct biquad_def_t {
+typedef struct {
   int           channel;                          // Associated channel
   double        coeffs[5];                        // Biquad coefficients
 #ifdef DOUBLE_PRECISION  
@@ -93,7 +97,7 @@ typedef struct biquad_def_t {
 #endif
 } biquad_def_t;
 
-typedef struct dsp_filter_t {
+typedef struct {
   double        coeffs_d[5];                      // The biquad coefficients for each of the filters (double precision)
   float         coeffs_f[5];                      // The biquad coefficients for each of the filters (float)
   float         w[2];                             // Array of historic W values for each biquad filter
@@ -101,7 +105,7 @@ typedef struct dsp_filter_t {
   filter_def_t* filter_def;                       // Associated frequency defined filter
 } dsp_filter_t;
 
-typedef struct dsp_data_t {
+typedef struct {
   float         scaling_factor;                   // Factor used to scale values for specified gain
   int           delay_samples;                    // Number of calculated samples delayed in buffer
   int           delay_offset;                     // Offset within the delay buffer for storing next set of input values
@@ -114,7 +118,7 @@ typedef struct dsp_data_t {
   int           num_filters;                      // Total number of filters in the channel
 } dsp_data_t;
 
-typedef struct dsp_channel_t {
+typedef struct {
   const char*   name;                             // Name of the channel
   int           inputs[DSP_NUM_CHANNELS];         // Input channels from the source
   float         gain_dB;                          // The amount of gain added to the channel
@@ -127,9 +131,9 @@ typedef struct dsp_channel_t {
 // Global variables
 //------------------------------------------------------------------------------------
 
-extern TelnetSpy      SerialAndTelnet;
 extern char           strIPAddress[16];
 extern dsp_channel_t  DSP_Channels[DSP_NUM_CHANNELS];
+extern TelnetSpy      SerialAndTelnet;
 
 #ifdef WIFI_ON
   #undef SERIAL        
@@ -167,11 +171,3 @@ extern "C" {
 extern "C" {
   esp_err_t       dsps_biquad_f32_dbl( const float *input, float *output, int len, double *coef, float* w);
 }
-
-#ifdef DISPLAY_ON
-bool              dsp_display_init();
-void              dsp_display_error();
-void              dsp_display_output( int channel_id, sample_t level, int clip_count );
-void              dsp_display_input( int channel_id, sample_t level, int clip_count );
-void              dsp_display_loop();
-#endif

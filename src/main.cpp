@@ -1,6 +1,10 @@
-#include <ArduinoOTA.h>                 // OTA library
+#include <Arduino.h> 
+
 #include "credentials.h"
 #include "dsp_process.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 
 //------------------------------------------------------------------------------------ 
 // Common data
@@ -12,6 +16,10 @@ char    message[256];
 // TelnetSpy setup
 //------------------------------------------------------------------------------------ 
 TelnetSpy       SerialAndTelnet;
+
+
+static void main_task(void *pvParameters);
+
 
 static void setupTelnetSpy() {
 
@@ -218,24 +226,6 @@ static int setupDSP() {
 }
 
 
-#ifdef DISPLAY_ON
-//------------------------------------------------------------------------------------ 
-// Display setup
-//------------------------------------------------------------------------------------
-static void setupDisplay() {
-  dsp_display_init();
-}
-
-
-//------------------------------------------------------------------------------------ 
-// Display loop
-//------------------------------------------------------------------------------------
-static void loopDisplay() {
-  dsp_display_loop();
-}
-#endif
-
-
 //------------------------------------------------------------------------------------ 
 // Main setup
 //------------------------------------------------------------------------------------ 
@@ -263,10 +253,7 @@ static void main_task( void * pvParameters ) {
   setupTelnetSpy();    
 #endif
   setupSerial();
-  setupDSP();  
-#ifdef DISPLAY_ON  
-  setupDisplay();
-#endif  
+  setupDSP(); 
 
   while( true ) {
 #ifdef WIFI_ON
@@ -275,9 +262,6 @@ static void main_task( void * pvParameters ) {
     loopTelnetSpy(); 
 #endif
     loopSerialInput();
-#ifdef DISPLAY_ON  
-    loopDisplay();
-#endif
     vTaskDelay( TASK_DELAY );
   }
 }

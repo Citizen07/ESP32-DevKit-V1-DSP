@@ -1,3 +1,5 @@
+#include "dsp_process.h"
+
 // Example: Dual subwoofers mixing left and right channels with -24 dB per octave crossover at 120 Hz and peak filters at 35 and 60 Hz
 
 // Channel configuration

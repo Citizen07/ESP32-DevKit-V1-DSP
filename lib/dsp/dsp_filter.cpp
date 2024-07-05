@@ -2,7 +2,7 @@
 
 static const char   compile_date[] = __DATE__ " " __TIME__;
 static float        Biquad_Buff_F32[ DSP_MAX_SAMPLES ];  // Single channel input buffer for biquad function
-static char*        filter_name[] = {"Low Pass", "High Pass", "Band Pass", "Notch Pass", "All Pass", "Peak EQ", "Low Shelf", "High Shelf" };
+static const char*  filter_name[] = {"Low Pass", "High Pass", "Band Pass", "Notch Pass", "All Pass", "Peak EQ", "Low Shelf", "High Shelf" };
 static bool         filter_update = false;
 
 
@@ -498,12 +498,7 @@ esp_err_t dsp_filter( dsp_channel_t* channels, sample_t* input_buffer, sample_t*
     dsp_data = channel->data;
 
     // Process the input buffer
-    dsp_process_input( channel, sample_count, input_buffer, clip_flag, filters_enabled );      
-
-#ifdef DISPLAY_ON
-    // Send input level for display
-    dsp_display_input( channel_id, dsp_data->in_max_level, dsp_data->in_clip_count );
-#endif    
+    dsp_process_input( channel, sample_count, input_buffer, clip_flag, filters_enabled );       
 
     // Apply the filters
     if( filters_enabled ) {
@@ -513,10 +508,6 @@ esp_err_t dsp_filter( dsp_channel_t* channels, sample_t* input_buffer, sample_t*
     // Process the output buffer
     dsp_process_output( channel, channel_id, sample_count, output_buffer, clip_flag, filters_enabled );
     
-#ifdef DISPLAY_ON
-    // Send output level for display
-    dsp_display_output( channel_id, dsp_data->out_max_level, dsp_data->out_clip_count );
-#endif
   }
   return( ESP_OK );
 }
