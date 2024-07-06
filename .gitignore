@@ -4,3 +4,6 @@
 .vscode/launch.json
 .vscode/ipch
 
+*/credentials.h
+*/dsp_config.h
+*/dsp_import.h

@@ -4,6 +4,9 @@
 #include "dsp_process.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include "driver/dac_cosine.h"
+
+#define TEST_TONE_ON
 
 
 //------------------------------------------------------------------------------------ 
@@ -209,6 +212,26 @@ void setupOTA() {
   ArduinoOTA.begin();
 }
 
+#ifdef TEST_TONE_ON
+// Set up the DAC peripheral to produce 440 Hz tone on GPIO25
+void dac_setup()
+{
+  dac_cosine_handle_t chan0_handle;
+  dac_cosine_config_t cos0_cfg = {
+      .chan_id = DAC_CHAN_0,
+      .freq_hz = 440,
+      .clk_src = DAC_COSINE_CLK_SRC_DEFAULT,
+      .atten = DAC_COSINE_ATTEN_DEFAULT,
+      .offset = 0,
+  };
+     
+  cos0_cfg.phase = DAC_COSINE_PHASE_0;
+  cos0_cfg.flags.force_set_freq = false;
+  
+  ESP_ERROR_CHECK(dac_cosine_new_channel(&cos0_cfg, &chan0_handle));
+  ESP_ERROR_CHECK(dac_cosine_start(chan0_handle));
+}
+#endif
 
 //------------------------------------------------------------------------------------ 
 // OTA update loop
@@ -254,6 +277,12 @@ static void main_task( void * pvParameters ) {
 #endif
   setupSerial();
   setupDSP(); 
+
+#ifdef TEST_TONE_ON
+  //Set up dac to generate 440Hz test tone
+  dac_setup();
+  delay(500);
+#endif
 
   while( true ) {
 #ifdef WIFI_ON

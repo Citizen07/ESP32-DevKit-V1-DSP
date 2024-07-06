@@ -8,7 +8,7 @@ static  bool            dsp_ok_flag           = true;
 
 i2s_chan_handle_t tx_handle;
 i2s_chan_handle_t rx_handle;
-#define AUDIO_BUFF_SIZE       4096*2            // Audio buffer size
+#define AUDIO_BUFF_SIZE       (DSP_MAX_SAMPLES * sizeof(sample_t))
 
 
 //------------------------------------------------------------------------------------ 
@@ -20,10 +20,10 @@ static void esp_led_flash( bool flash, unsigned long duration ) {
 
   if( flash && (esp_led_flash_start == 0) ) {
     esp_led_flash_start = esp_timer_get_time()/1000;
-    gpio_set_level(GPIO_NUM_22, 1);
+    gpio_set_level(LED_OUTPUT, 1);
   } else if( esp_timer_get_time()/1000 - esp_led_flash_start > duration ) {
     esp_led_flash_start = 0;
-    gpio_set_level(GPIO_NUM_22, 0);
+    gpio_set_level(LED_OUTPUT, 0);
   }
 }
 
@@ -101,7 +101,7 @@ esp_err_t dsp_init( TaskHandle_t* taskDSP ) {
   SERIAL.printf("Init I2S Channel: %x\n", i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
   /* Set the configurations for BOTH TWO channels, since TX and RX channel have to be same in full-duplex mode */
   i2s_std_config_t std_cfg = {
-      .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(48000),
+      .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(DSP_SAMPLE_RATE),
       .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
       .gpio_cfg = {
           .mclk = I2S_STD_MCLK_IO1,
@@ -124,7 +124,7 @@ esp_err_t dsp_init( TaskHandle_t* taskDSP ) {
   SERIAL.printf("Enable I2S RX: %x\n", i2s_channel_enable(rx_handle));
 
   // set clipping LED to output
-  gpio_set_direction(GPIO_NUM_22, GPIO_MODE_OUTPUT);
+  gpio_set_direction(LED_OUTPUT, GPIO_MODE_OUTPUT);
 
   /*******************/
 
@@ -177,14 +177,14 @@ void dsp_task( void * pvParameters ) {
   res = dsp_processing_init( DSP_Channels, BIQUAD_Filters, sizeof( BIQUAD_Filters )/sizeof( biquad_def_t ), FREQ_Filters, sizeof( FREQ_Filters )/sizeof( filter_def_t ) );
   
   if( res == ESP_OK ) {
-    uint8_t* w_buf = (uint8_t*)calloc(1, AUDIO_BUFF_SIZE);
+    sample_t* w_buf = (sample_t*)calloc(sizeof(sample_t), DSP_MAX_SAMPLES);
     assert(w_buf); // Check if w_buf allocation success
     size_t w_bytes = AUDIO_BUFF_SIZE;
 
     /* Enable the TX channel */
     ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
 
-    uint8_t* r_buf = (uint8_t*)calloc(1, AUDIO_BUFF_SIZE);
+    sample_t* r_buf = (sample_t*)calloc(sizeof(sample_t), DSP_MAX_SAMPLES);
     assert(r_buf); // Check if r_buf allocation success
     size_t r_bytes = 0;
 
@@ -194,7 +194,7 @@ void dsp_task( void * pvParameters ) {
     SERIAL.println("Ready for write.");
     
     while( true ) {
-     if( dsp_output_enabled ) {   
+      if( dsp_output_enabled ) {   
         // Read buffer
         auto err_r = i2s_channel_read(rx_handle, r_buf, AUDIO_BUFF_SIZE, &r_bytes, 1000);
         if (err_r != ESP_OK) {
@@ -203,7 +203,7 @@ void dsp_task( void * pvParameters ) {
   
         // Apply filters to buffer
         clip_flag = false;           
-        dsp_filter( DSP_Channels, (sample_t*)r_buf, (sample_t*)w_buf, r_bytes, dsp_filters_enabled, &clip_flag );
+        dsp_filter( DSP_Channels, r_buf, w_buf, r_bytes, dsp_filters_enabled, &clip_flag);
     
         /* Write i2s data */
         auto err_w = i2s_channel_write(tx_handle, w_buf, r_bytes, &w_bytes, 1000);
@@ -215,6 +215,9 @@ void dsp_task( void * pvParameters ) {
       // Check clipping LED
       esp_led_flash( clip_flag, 100 );
     }
+    
+    free(r_buf);
+    free(w_buf);
   } else {     
     while( true ) {
       vTaskDelay( TASK_DELAY );
