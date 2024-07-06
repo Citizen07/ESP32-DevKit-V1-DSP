@@ -23,11 +23,11 @@
 //------------------------------------------------------------------------------------
 
 #define I2S_STD_MCLK_IO1        GPIO_NUM_0        // I2S master clock io number 0
-#define I2S_STD_BCLK_IO1        GPIO_NUM_2        // I2S bit clock io number 2
+#define I2S_STD_BCLK_IO1        GPIO_NUM_17        // I2S bit clock io number 2
 #define I2S_STD_WS_IO1          GPIO_NUM_15       // I2S word select io number 15
 #define I2S_STD_DOUT_IO1        GPIO_NUM_4        // I2S data out io number 4
 #define I2S_STD_DIN_IO1         GPIO_NUM_16       // I2S data in io number 16
-#define LED_OUTPUT              GPIO_NUM_17       // LED out io number 17
+#define LED_OUTPUT              GPIO_NUM_2       // LED out io number
 
 #define CORE_MAIN               1                 // Core running main loop 
 #define CORE_DSP                0                 // Core running DSP loop

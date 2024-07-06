@@ -193,34 +193,34 @@ void dsp_task( void * pvParameters ) {
 
     SERIAL.println("Ready for write.");
     
-    while( true ) {
-      if( dsp_output_enabled ) {   
+    while(true) {
+      if(dsp_output_enabled ) {   
         // Read buffer
         auto err_r = i2s_channel_read(rx_handle, r_buf, AUDIO_BUFF_SIZE, &r_bytes, 1000);
         if (err_r != ESP_OK) {
           SERIAL.printf("DSP Task: i2s read failed with code: %d\n", err_r);
         }
-  
+
         // Apply filters to buffer
-        clip_flag = false;           
-        dsp_filter( DSP_Channels, r_buf, w_buf, r_bytes, dsp_filters_enabled, &clip_flag);
-    
+        clip_flag = false;
+        dsp_filter(DSP_Channels, r_buf, w_buf, r_bytes, dsp_filters_enabled, &clip_flag);
+
         /* Write i2s data */
         auto err_w = i2s_channel_write(tx_handle, w_buf, r_bytes, &w_bytes, 1000);
         if (err_w != ESP_OK) {
           SERIAL.printf("DSP Task: i2s write failed with code: %d\n", err_w);
         }
-      }   
+      }
       
       // Check clipping LED
-      esp_led_flash( clip_flag, 100 );
+      esp_led_flash(clip_flag, 100);
     }
     
     free(r_buf);
     free(w_buf);
   } else {     
-    while( true ) {
-      vTaskDelay( TASK_DELAY );
+    while(true) {
+      vTaskDelay(TASK_DELAY);
     }
   }
 }
