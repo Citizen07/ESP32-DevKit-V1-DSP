@@ -15,14 +15,14 @@
 char    message[256];
 
 
+static void main_task(void *pvParameters);
+
+
+#ifdef WIFI_ON
 //------------------------------------------------------------------------------------ 
 // TelnetSpy setup
 //------------------------------------------------------------------------------------ 
 TelnetSpy       SerialAndTelnet;
-
-
-static void main_task(void *pvParameters);
-
 
 static void setupTelnetSpy() {
 
@@ -41,7 +41,7 @@ static void setupTelnetSpy() {
 static void loopTelnetSpy() {
   SerialAndTelnet.handle();
 }
-
+#endif
 
 //------------------------------------------------------------------------------------ 
 // SERIAL setup

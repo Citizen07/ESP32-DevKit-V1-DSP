@@ -14,9 +14,12 @@
   #include <WiFi.h>
   #include <ESPmDNS.h>
 #endif
-#include <ArduinoOTA.h>
-#include "TelnetSpy.h"
 
+#include <ArduinoOTA.h>
+
+#ifdef WIFI_ON
+  #include "TelnetSpy.h"
+#endif
 
 //------------------------------------------------------------------------------------
 // Constant definitions
@@ -134,9 +137,9 @@ typedef struct {
 
 extern char           strIPAddress[16];
 extern dsp_channel_t  DSP_Channels[DSP_NUM_CHANNELS];
-extern TelnetSpy      SerialAndTelnet;
 
 #ifdef WIFI_ON
+extern TelnetSpy      SerialAndTelnet;
   #undef SERIAL        
   #define SERIAL      SerialAndTelnet
 #else
